@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 12px;
+            color: #333;
+            background-color: #fff;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            height: calc(100vh - 24px);
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .prompt-label {
+            font-weight: 500;
+            color: #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .char-count {
+            font-size: 12px;
+            color: #666;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.4;
+            box-sizing: border-box;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4285f4;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        button:hover {
+            background-color: #3574e2;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background-color: #f1f3f4;
+            color: #444;
+        }
+
+        button.secondary:hover {
+            background-color: #e8eaed;
+        }
+
+        .loading {
+            display: none;
+            padding: 8px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .error {
+            display: none;
+            padding: 8px;
+            color: #d93025;
+            background-color: #fce8e6;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .output-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+        }
+
+        .output-container {
+            flex: 1;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .keyboard-hint {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-section">
+            <div class="prompt-label">
+                <span>Введите запрос:</span>
+                <span class="char-count" id="charCount">0 символов</span>
+            </div>
+            <textarea 
+                id="prompt" 
+                placeholder="Спросите GPT о ваших данных в таблице..."
+                maxlength="4000"
+            ></textarea>
+            <div class="keyboard-hint">Нажмите Ctrl + Enter для отправки</div>
+            <div class="button-group">
+                <button onclick="sendPrompt()" id="sendButton">
+                    <span>Отправить</span>
+                </button>
+                <button onclick="clearAll()" id="clearButton" class="secondary">
+                    Очистить
+                </button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            Processing your request...
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <div class="output-section">
+            <div class="prompt-label">Response:</div>
+            <div id="output" class="output-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const promptInput = document.getElementById('prompt');
+        const sendButton = document.getElementById('sendButton');
+        const clearButton = document.getElementById('clearButton');
+        const outputDiv = document.getElementById('output');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const charCountDiv = document.getElementById('charCount');
+
+        // Update character count
+        function updateCharCount() {
+            const count = promptInput.value.length;
+            charCountDiv.textContent = `${count} символов`;
+        }
+
+        promptInput.addEventListener('input', updateCharCount);
+
+        // Send prompt to Google Apps Script
+        function sendPrompt() {
+            const prompt = promptInput.value.trim();
+            
+            if (!prompt) {
+                showError('Пожалуйста, введите запрос');
+                return;
+            }
+
+            // Show loading state
+            setLoading(true);
+            hideError();
+            
+            // Disable buttons during processing
+            sendButton.disabled = true;
+            clearButton.disabled = true;
+
+            // Call server-side function
+            google.script.run
+                .withSuccessHandler(handleSuccess)
+                .withFailureHandler(handleError)
+                .callOpenAI(prompt);
+        }
+
+        // Handle successful response
+        function handleSuccess(result) {
+            setLoading(false);
+            sendButton.disabled = false;
+            clearButton.disabled = false;
+            outputDiv.textContent = result;
+            // Scroll to the bottom of the output
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+
+        // Handle error
+        function handleError(error) {
+            setLoading(false);
+            sendButton.disabled = false;
+            clearButton.disabled = false;
+            showError(error.message || 'Произошла ошибка');
+        }
+
+        // Clear all inputs and outputs
+        function clearAll() {
+            promptInput.value = '';
+            outputDiv.textContent = '';
+            hideError();
+            updateCharCount();
+        }
+
+        // Show/hide loading state
+        function setLoading(isLoading) {
+            loadingDiv.style.display = isLoading ? 'block' : 'none';
+        }
+
+        // Show error message
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Hide error message
+        function hideError() {
+            errorDiv.style.display = 'none';
+        }
+
+        // Handle keyboard shortcuts
+        promptInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                sendPrompt();
+            }
+        });
+
+        // Focus the prompt input when the sidebar loads
+        window.addEventListener('load', function() {
+            promptInput.focus();
+        });
+    </script>
+</body>
+</html>

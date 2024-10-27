@@ -1,1 +1,56 @@
 # Step 0
+I am building GPT extension for Google Sheets using Google Apps Script what is the best package to use?
+
+please find reply in `draft PRD` and with some code snipets added
+
+# Composer for planning 
+## Step 1 (composer for planning: new `claude-3-5-sonnet-20241022` model )
+This is the project I would like to build
+How should I structure my project files?
+(try to create as few files as possible)
+
+## Step 2 (composer for planning)
+please provide example for the code to Connect Google Sheet Script to OpenAI API 
+do not create file, just provide an example
+
+## Step 3 (composer for planning)
+please provide code example to Add a Custom Menu "GPT Extension" in Google Sheets
+
+## Step 4 (composer for planning)
+please provide code example to Set Up the Sidebar UI that can provide a user-friendly interface where users enter prompts and view results
+
+## Step 5 (composer for planning)
+please provide code example for settings panel, so one can edit 
+the following parameters:
+- base url of openai compatible model
+- model itself (either chose from the short list of 4 most popular openai models or enter manually the name of the model)
+- temperature (from 0 to 1, of possible use progress bar or something like this)
+- max tokens (from 150 till infinity)
+
+
+# Composer for project code
+using new `claude-3-5-sonnet-20241022` model
+
+## Step 1
+read carefully instructions in the file and build first  ## Connect Google Sheets Apps Script to OpenAI API
+
+## Step 2
+great, let's continue and build ## Add a Custom Menu "GPT Extension" in Google Sheets
+
+## Step 3
+great! let's continue and build ## Set Up the Sidebar UI that can provide a user-friendly interface where users enter prompts and view results
+
+## Step 4
+great ! let's continue and build ## Model Settings Panel
+
+## Step 5
+great, could you please translate menu options into Russian in all project files where needed, do not change code logic
+
+## Step 6
+could you please explain what is the logic behind "Анализ выбранных ячеек" ?
+
+## Step 7
+what is the prompt to analyze "Анализ выбранных ячеек" ?
+
+## Step 8
+Please create a comprehensive  github README.md file in Russian based on PRD provided.

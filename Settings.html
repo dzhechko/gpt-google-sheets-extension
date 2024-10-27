@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            color: #333;
+            background-color: #fff;
+        }
+
+        .settings-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 100%;
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 16px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .setting-header {
+            font-weight: 500;
+            color: #444;
+            margin-bottom: 4px;
+        }
+
+        .setting-description {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #444;
+        }
+
+        input[type="text"], 
+        input[type="number"],
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus, 
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #4285f4;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.1);
+        }
+
+        .model-input {
+            display: none;
+        }
+
+        .model-input.show {
+            display: block;
+            margin-top: 8px;
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #ddd;
+            border-radius: 2px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #4285f4;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .value-display {
+            min-width: 40px;
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        button:hover {
+            background-color: #3574e2;
+        }
+
+        button.secondary {
+            background-color: #f1f3f4;
+            color: #444;
+        }
+
+        button.secondary:hover {
+            background-color: #e8eaed;
+        }
+
+        .status {
+            display: none;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+        .success {
+            background-color: #e6f4ea;
+            color: #137333;
+        }
+
+        .error {
+            background-color: #fce8e6;
+            color: #d93025;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <div class="setting-group">
+            <div class="setting-header">Настройки API</div>
+            <div class="setting-description">Настройте базовый URL для вашего API</div>
+            <label for="baseUrl">Базовый URL API:</label>
+            <input type="text" id="baseUrl" placeholder="https://api.openai.com/v1">
+        </div>
+
+        <div class="setting-group">
+            <div class="setting-header">Выбор модели</div>
+            <div class="setting-description">Выберите модель или укажите свою</div>
+            <label for="modelSelect">Модель:</label>
+            <select id="modelSelect">
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                <option value="gpt-3.5-turbo-16k">GPT-3.5 Turbo 16K</option>
+                <option value="custom">Своя модель</option>
+            </select>
+            <input type="text" id="customModel" class="model-input" placeholder="Введите название модели">
+        </div>
+
+        <div class="setting-group">
+            <div class="setting-header">Параметры генерации</div>
+            <div class="setting-description">Настройте поведение и вывод модели</div>
+            
+            <label for="temperature">Температура:</label>
+            <div class="range-container">
+                <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
+                <span class="value-display" id="temperatureValue">0.7</span>
+            </div>
+            <div class="setting-description">Высокие значения делают вывод более творческим, низкие - более сфокусированным</div>
+
+            <label for="maxTokens">Максимум токенов:</label>
+            <input type="number" id="maxTokens" min="150" value="1000" step="50">
+            <div class="setting-description">Максимальное количество токенов в ответе</div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="saveSettings()">Сохранить настройки</button>
+            <button onclick="resetDefaults()" class="secondary">Сбросить настройки</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // Initialize settings
+        document.addEventListener('DOMContentLoaded', function() {
+            google.script.run
+                .withSuccessHandler(loadSettings)
+                .getSettings();
+        });
+
+        // Handle model select change
+        document.getElementById('modelSelect').addEventListener('change', function(e) {
+            const customInput = document.getElementById('customModel');
+            if (e.target.value === 'custom') {
+                customInput.classList.add('show');
+            } else {
+                customInput.classList.remove('show');
+            }
+        });
+
+        // Update temperature display
+        document.getElementById('temperature').addEventListener('input', function(e) {
+            document.getElementById('temperatureValue').textContent = e.target.value;
+        });
+
+        function loadSettings(settings) {
+            if (!settings) return;
+            
+            document.getElementById('baseUrl').value = settings.baseUrl || 'https://api.openai.com/v1';
+            document.getElementById('temperature').value = settings.temperature || 0.7;
+            document.getElementById('temperatureValue').textContent = settings.temperature || 0.7;
+            document.getElementById('maxTokens').value = settings.maxTokens || 1000;
+            
+            const modelSelect = document.getElementById('modelSelect');
+            const customModel = document.getElementById('customModel');
+            
+            if (settings.model) {
+                if (['gpt-4', 'gpt-4-turbo-preview', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k'].includes(settings.model)) {
+                    modelSelect.value = settings.model;
+                } else {
+                    modelSelect.value = 'custom';
+                    customModel.value = settings.model;
+                    customModel.classList.add('show');
+                }
+            }
+        }
+
+        function resetDefaults() {
+            const defaults = {
+                baseUrl: 'https://api.openai.com/v1',
+                model: 'gpt-3.5-turbo',
+                temperature: 0.7,
+                maxTokens: 1000
+            };
+            loadSettings(defaults);
+            showStatus('Настройки сброшены к значениям по умолчанию', 'success');
+        }
+
+        function saveSettings() {
+            const modelSelect = document.getElementById('modelSelect');
+            const model = modelSelect.value === 'custom' 
+                ? document.getElementById('customModel').value.trim()
+                : modelSelect.value;
+
+            if (modelSelect.value === 'custom' && !model) {
+                showStatus('Необходимо указать название модели', 'error');
+                return;
+            }
+
+            const settings = {
+                baseUrl: document.getElementById('baseUrl').value.trim(),
+                model: model,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                maxTokens: parseInt(document.getElementById('maxTokens').value)
+            };
+
+            // Validate settings
+            if (!settings.baseUrl) {
+                showStatus('Необходимо указать базовый URL', 'error');
+                return;
+            }
+
+            google.script.run
+                .withSuccessHandler(() => showStatus('Настройки успешно сохранены!', 'success'))
+                .withFailureHandler((error) => showStatus(error.message || 'Ошибка сохранения настроек', 'error'))
+                .saveSettings(settings);
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => status.style.display = 'none', 3000);
+            }
+        }
+    </script>
+</body>
+</html>
